@@ -1,4 +1,7 @@
 ; Strict Teacher, improved by ya boy tuvalutorture :D
+; sadly, clear of profanity, as i am submitting this to a club for fellow teens
+; i would have loved to be quite profane
+; oh well
 
 bits 64
 
@@ -6,7 +9,6 @@ global main
 extern printf, scanf, puts, rand, srand, time
 ; for rand, number stored in EAX
 ; for time, in RAX
-
 
 section .text
     ; So basically, I want to do an addition question.
@@ -58,7 +60,7 @@ section .text
                 cmp r13d, edx ; quite hackey but eh it works so screw it we ball
                 je .get_nums
                 
-                cmp r14, 2
+                cmp r14, 2 ; for easy subtraction mode
                 jne ask_the_darn_question
                 cmp r13d, r12d
                 jna ask_the_darn_question  
@@ -91,12 +93,23 @@ section .text
                 clc ; clear carry just in case so we don't quit early
                 je is_correct
 
-                xor r15, r15
                 lea rbx, [rel roasts]
-
+                cmp r15, 0
+                je .is_doing_horrible
+                xor r15, r15
                 jmp done
 
+                .is_doing_horrible:
+                    inc [rel hasBeenCooked]
+                    call debump
+                    lea rcx, [rel isDoingSoBadlyTheyAreBeyondSalvation]
+                    cmp rcx, rbx
+                    je bail
+                    lea rbx, [rel roasts]
+                    jmp done
+
             is_correct:
+                mov [rel hasBeenCooked], 0 
                 inc [rel rightAnswers]
                 call printf
                 inc r15
@@ -107,6 +120,7 @@ section .text
                 jne bail
             
             done: 
+                xor rax, rax
                 call rand
                 xor rdx, rdx
                 mov rcx, 10
@@ -120,6 +134,7 @@ section .text
                 mov edx, r12d
                 mov r8d, [rel numb]
                 call printf
+                clc
 
             bail:
                 jnc loop
@@ -176,14 +191,40 @@ section .text
                 lea rbx, [rel bumps]
                 mov rcx, [rbx + r14 * 8]
                 call puts
+                inc r14
                 lea rbx, [rel bumpFuncs]
                 call [rbx + r14 * 8]
-                inc r14
                 xor r15, r15
                 mov eax, 1
         .return:
             add rsp, 40
             ret
+
+    debump:
+        sub rsp, 40
+        cmp [rel hasBeenCooked], 5
+        jnae .bail
+        cmp r14, 0
+        jne .decrement
+        lea rcx, [rel isDoingSoBadlyTheyAreBeyondSalvation]
+        mov rbx, rcx
+        call puts
+        stc
+        ret
+        .decrement:
+            lea rcx, [rel isGenuinelyDoingAwful]
+            call puts
+            dec r14
+            lea rbx, [rel bumpFuncs]
+            call [rbx + r14 * 8]
+        .bail:
+            add rsp, 40
+            ret
+
+    bumpToAddition:
+        mov qword [rel streakForBump], 5
+        mov dword [rel divisor], 10
+        ret
 
     bumpToHardAddition:
         mov qword [rel streakForBump], 10
@@ -268,6 +309,7 @@ section .data
         dq bump6
     
     bumpFuncs:
+        dq bumpToAddition
         dq bumpToHardAddition
         dq bumpToSubtraction
         dq bumpToHardSubtraction
@@ -324,7 +366,20 @@ section .data
         dq backhandedCompliment8
         dq backhandedCompliment9
 
+    isGenuinelyDoingAwful: 
+        db "Dear. God. You are GENUINELY awful at this.", 10
+        db "You know what? You're going backwards.", 10
+        db "That's right. Because you can't seem to get *A N Y T H I N G* right!", 10
+        db "So maybe a slower change of pace will help you ACTUALLY accomplish something in your god-forsaken life. How's that?", 0
+
+    isDoingSoBadlyTheyAreBeyondSalvation: 
+        db "How. Just. How. You are doing math at the level of a PRESCHOOLER.", 10
+        db "AND YET, BY GOD'S GOOD GRACES, YOU HAVE FAILED THAT TOO.", 10
+        db "Just get out. Genuinely.", 10
+        db "Adios, bye, ciao, cya later, just not in MY classroom, for ritchie's sakes.", 0
+
 section .bss
     numb: resd 1
     rightAnswers: resd 1
     questionsAsked: resd 1
+    hasBeenCooked: resd 1
