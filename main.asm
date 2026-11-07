@@ -148,14 +148,16 @@ section .text
             mov r9d, [rel questionsAsked]
             call printf
         
-            mov ecx, [rel rightAnswers]
-            cmp ecx, 0 ; nothing right at ALL
+            xor rax, rax
+            mov eax, [rel rightAnswers]
+            cmp eax, 0 ; nothing right at ALL
             jne .get_grade
-            mov eax, 4 ; F
+            mov eax, 0 ; F
             jmp .print_grade
-            .get_grade: ; very wonky grade calculator but it works (kinda not really)
-                xor rax, rax
-                mov eax, [rel questionsAsked]
+            .get_grade:
+                mov ecx, 5
+                mul ecx
+                mov ecx, [rel questionsAsked]
                 xor edx, edx
                 div ecx
                 dec eax
@@ -484,11 +486,12 @@ section .data
     gradeString: db "Your final ", 27, "[33m", "grade", 27, "[0m", ": %s", 10, 0
 
     grades:
-        dq gradeA
-        dq gradeB
-        dq gradeC
-        dq gradeD
         dq gradeF
+        dq gradeD
+        dq gradeC
+        dq gradeB
+        dq gradeA
+        
 
 section .bss
     numb: resd 1
