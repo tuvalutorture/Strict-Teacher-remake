@@ -51,17 +51,14 @@ section .text
             .get_nums: ; while (r12d == r13d && r12d && r13d).
                 ; 1st random
                 call randomiser
+                inc edx ; nullifies the need for zero checking, plus sets the upper bound correctly to the divisor (rather than one below)
                 mov r12d, edx
                 ; 2nd random
                 call randomiser
+                inc edx
                 mov r13d, edx
                 cmp r12d, r13d ; this prevents us from getting equality (which means subtraction won't equal 0)
                 je .get_nums 
-                xor edx, edx
-                cmp r12d, edx ; or zeros (which means mult could be zero)
-                je .get_nums
-                cmp r13d, edx ; quite hackey but eh it works so screw it we ball
-                je .get_nums
                 
                 cmp r14, 2 ; for easy subtraction mode
                 jne ask_the_darn_question
@@ -426,3 +423,9 @@ section .bss
     questionsAsked: resd 1
     hasBeenCooked: resd 1
     lastRandom: resd 1
+
+; YOU'RE SO COLD KEEP YOUR
+; HAND IN MINE
+; WISE MEN WONDER WHILE
+; STRONG MEN DIE
+; or something idk, i'm just quoting my mans Boinkout Benjamin ykyk
