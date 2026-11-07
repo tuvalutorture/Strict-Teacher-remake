@@ -82,12 +82,13 @@ section .text
                     call scanf
                     cmp eax, 0
                     jne .compare_to_quit
+                    call clearStdin
                     lea rcx, [rel inputWasNotNumber]
                     call puts
-                    call clearStdin
                     jmp .get_answer
                 
                 .compare_to_quit:
+                    call clearStdin
                     cmp [rel numb], 0
                     je taunt_and_bail
 
@@ -146,6 +147,23 @@ section .text
             mov r8d, [rel rightAnswers]
             mov r9d, [rel questionsAsked]
             call printf
+        
+            mov ecx, [rel rightAnswers]
+            cmp ecx, 0 ; nothing right at ALL
+            jne .get_grade
+            mov eax, 4 ; F
+            jmp .print_grade
+            .get_grade: ; very wonky grade calculator but it works (kinda not really)
+                xor rax, rax
+                mov eax, [rel questionsAsked]
+                xor edx, edx
+                div ecx
+                dec eax
+            .print_grade:
+                lea rbx, [rel grades]
+                lea rcx, [rel gradeString]
+                mov rdx, [rbx + rax * 8]
+                call printf
 
         dont_even_bother_printing_out:
             add rsp, 80
@@ -270,6 +288,10 @@ section .text
         mov rdx, r14
         inc rdx
         call printf
+        lea rcx, [rel diffFormat]
+        lea rbx, [rel operationNames]
+        mov rdx, [rbx + r14 * 8]
+        call printf
         lea rcx, [rel divider]
         call puts
         add rsp, 40
@@ -288,7 +310,7 @@ section .text
             ret
 
 section .data
-    msg1: db "Boy, you better get these questions right >:( (or press 0 to chicken out)", 0
+    msg1: db 27, "[35m", "Boy, you better get these questions right >:[", 27, "[0m", 27, "[31m", " (or press", 27, "[0m", 27, "[33m", " 0 ", 27, "[0m", 27, "[31m", "to chicken out)", 27, "[0m", 0
     msg2: db "What is %d %s %d?: ", 10, 0
 
     didJustChangeDifficulty: dq 1
@@ -318,6 +340,19 @@ section .data
         dq operation_times
         dq operation_times
         dq operation_times
+
+    operation_addition: db "addition", 0
+    operation_subtraction: db "subtraction", 0
+    operation_multiplication: db "multiplication", 0
+
+    operationNames:
+        dq operation_addition
+        dq operation_addition
+        dq operation_subtraction
+        dq operation_subtraction
+        dq operation_multiplication
+        dq operation_multiplication
+        dq operation_multiplication
 
     operationFuncs:
         dq addition
@@ -419,13 +454,15 @@ section .data
 
     divider: db "---------------------------", 0
 
-    diff1: db "%d: ez mode (addition)", 10, 0
-    diff2: db "%d: okay is warming up (addition)", 10, 0
-    diff3: db "%d: ok but have ya tried carrying the one yet? (subtraction)", 10, 0
-    diff4: db "%d: wow those numbers are big (subtraction)", 10, 0
-    diff5: db "%d: ummm, what (multiplication)", 10, 0
-    diff6: db "%d: quite warm in here innit fellas (multiplication)", 10, 0
-    diff7: db 27, "[31m", "%d: dear lord dennis ritchie, what have i gotten myself into", 27, "[0m", 10, 0
+    diff1: db "%d: ez mode", 0
+    diff2: db "%d: okay is warming up", 0
+    diff3: db "%d: ok but have ya tried carrying the one yet?", 0
+    diff4: db "%d: wow those numbers are big", 0
+    diff5: db "%d: ummm, what", 0
+    diff6: db "%d: quite warm in here innit fellas", 0
+    diff7: db 27, "[31m", "%d: dear lord dennis ritchie, what have i gotten myself into", 27, "[0m", 0
+
+    diffFormat: db " (", 27, "[33m", "%s", 27, "[0m", ")", 10, 0
 
     diffs:
         dq diff1
@@ -437,6 +474,21 @@ section .data
         dq diff7
 
     inputWasNotNumber: db 27, "[31m", "Genuinely, what was that? That was not a number. Try again.", 27, "[0m", 0
+
+    gradeA: db 27, "[32m", "A", 27, "[0m", 0
+    gradeB: db 27, "[36m", "B", 27, "[0m", 0
+    gradeC: db 27, "[33m", "C", 27, "[0m", 0
+    gradeD: db 27, "[35m", "D", 27, "[0m", 0
+    gradeF: db 27, "[31m", "F", 27, "[0m", 0
+
+    gradeString: db "Your final ", 27, "[33m", "grade", 27, "[0m", ": %s", 10, 0
+
+    grades:
+        dq gradeA
+        dq gradeB
+        dq gradeC
+        dq gradeD
+        dq gradeF
 
 section .bss
     numb: resd 1
