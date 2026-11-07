@@ -39,7 +39,6 @@ section .text
 
         mov [rel rightAnswers], 0
         mov [rel questionsAsked], 0
-        mov [rel lastRandom], 8
 
         xor r14, r14
         xor r15, r15
@@ -86,8 +85,7 @@ section .text
                 call scanf
 
                 cmp [rel numb], 0
-                stc ; set the bailout flag
-                je bail
+                je taunt_and_bail
 
                 inc [rel questionsAsked] ; question went through, so we inc
                 
@@ -101,7 +99,7 @@ section .text
                 call debump
                 lea rcx, [rel isDoingSoBadlyTheyAreBeyondSalvation]
                 cmp rcx, rbx
-                je bail
+                je dont_even_bother_printing_out
                 lea rbx, [rel roasts]
                 jmp done
 
@@ -110,10 +108,9 @@ section .text
                 inc [rel rightAnswers]
                 inc r15
                 call check_bump
-                clc
                 lea rbx, [rel backhandedCompliments]
                 cmp eax, 0
-                jne bail
+                jne loop
             
             done: 
                 .pick_random:
@@ -121,41 +118,42 @@ section .text
                     xor edx, edx
                     mov ecx, 10
                     div ecx
-                    cmp edx, [rel lastRandom]
+                    cmp edx, [rel lastRandom] ; it's uninitialised but it should be fine, worst case we get an extra loop iter.
                     mov [rel lastRandom], edx
                     je .pick_random ; prevents same thing from printing twice in a row 
                 mov rcx, [rbx + rdx * 8]
                 call puts
                 lea rax, [rel roasts]
                 cmp rbx, rax
-                clc
                 jne bail
                 lea rcx, [rel roastGiveAnswer]
                 mov edx, r12d
                 mov r8d, [rel numb]
                 call printf
-                clc
 
             bail:
-                jnc loop
+                jmp loop
         
-        ; taunt the user a lil bit
-        lea rcx, [rel endingMessage]
-        mov edx, [rel questionsAsked]
-        mov r8d, [rel rightAnswers]
-        mov r9d, [rel questionsAsked]
-        call printf
 
-        add rsp, 80
+        taunt_and_bail:
+            ; taunt the user a lil bit
+            lea rcx, [rel endingMessage]
+            mov edx, [rel questionsAsked]
+            mov r8d, [rel rightAnswers]
+            mov r9d, [rel questionsAsked]
+            call printf
 
-        ; pops our pushed regs so that we don't accidentally destroy something up above us that may use them
-        pop rbx
-        pop r15
-        pop r14
-        pop r13
-        pop r12
+        dont_even_bother_printing_out:
+            add rsp, 80
 
-        ret 
+            ; pops our pushed regs so that we don't accidentally destroy something up above us that may use them
+            pop rbx
+            pop r15
+            pop r14
+            pop r13
+            pop r12
+
+            ret 
 
     randomiser:
         call rand
@@ -210,7 +208,7 @@ section .text
         lea rcx, [rel isDoingSoBadlyTheyAreBeyondSalvation]
         mov rbx, rcx
         call puts
-        stc
+        mov [rel numb], 0
         jmp .bail
         .decrement:
             lea rcx, [rel isGenuinelyDoingAwful]
