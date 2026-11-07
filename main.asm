@@ -39,11 +39,16 @@ section .text
 
         mov [rel rightAnswers], 0
         mov [rel questionsAsked], 0
+        mov [rel lastRandom], 8
 
         xor r14, r14
         xor r15, r15
 
         loop:
+            cmp [rel didJustChangeDifficulty], 0
+            je .get_nums
+            call printDifficulty
+            mov [rel didJustChangeDifficulty], 0
             .get_nums: ; while (r12d == r13d && r12d && r13d).
                 ; 1st random
                 call randomiser
@@ -111,11 +116,14 @@ section .text
                 jne bail
             
             done: 
-                xor rax, rax
-                call rand
-                xor rdx, rdx
-                mov rcx, 10
-                div rcx
+                .pick_random:
+                    call rand
+                    xor edx, edx
+                    mov ecx, 10
+                    div ecx
+                    cmp edx, [rel lastRandom]
+                    mov [rel lastRandom], edx
+                    je .pick_random ; prevents same thing from printing twice in a row 
                 mov rcx, [rbx + rdx * 8]
                 call puts
                 lea rax, [rel roasts]
@@ -188,6 +196,7 @@ section .text
                 call [rbx + r14 * 8]
                 xor r15, r15
                 mov eax, 1
+                mov [rel didJustChangeDifficulty], 1
         .return:
             add rsp, 40
             ret
@@ -202,7 +211,7 @@ section .text
         mov rbx, rcx
         call puts
         stc
-        ret
+        jmp .bail
         .decrement:
             lea rcx, [rel isGenuinelyDoingAwful]
             call puts
@@ -210,6 +219,7 @@ section .text
             lea rbx, [rel bumpFuncs]
             call [rbx + r14 * 8]
             mov [rel hasBeenCooked], 0
+            mov [rel didJustChangeDifficulty], 1
         .bail:
             add rsp, 40
             ret
@@ -249,9 +259,25 @@ section .text
         mov dword [rel divisor], 1000 ; quite devilish if i do say so myself
         ret
 
+    printDifficulty:
+        sub rsp, 40
+        lea rcx, [rel divider]
+        call puts
+        lea rbx, [rel diffs]
+        mov rcx, [rbx + r14 * 8]
+        mov rdx, r14
+        inc rdx
+        call printf
+        lea rcx, [rel divider]
+        call puts
+        add rsp, 40
+        ret
+
 section .data
     msg1: db "Boy, you better get these questions right >:( (or press 0 to chicken out)", 0
     msg2: db "What is %d %s %d?: ", 10, 0
+
+    didJustChangeDifficulty: dq 1
 
     endingMessage: 
         db 27, "[35m"
@@ -377,8 +403,28 @@ section .data
         db "Adios, bye, ciao, cya later, just not in MY classroom, for ritchie's sakes."
         db 27, "[0m", 0
 
+    divider: db "---------------------------", 0
+
+    diff1: db "%d: ez mode (addition)", 10, 0
+    diff2: db "%d: okay is warming up (addition)", 10, 0
+    diff3: db "%d: ok but have ya tried carrying the one yet? (subtraction)", 10, 0
+    diff4: db "%d: wow those numbers are big (subtraction)", 10, 0
+    diff5: db "%d: ummm, what (multiplication)", 10, 0
+    diff6: db "%d: quite warm in here innit fellas (multiplication)", 10, 0
+    diff7: db 27, "[31m", "%d: dear lord dennis ritchie, what have i gotten myself into", 27, "[0m", 10, 0
+
+    diffs:
+        dq diff1
+        dq diff2
+        dq diff3
+        dq diff4
+        dq diff5
+        dq diff6
+        dq diff7
+
 section .bss
     numb: resd 1
     rightAnswers: resd 1
     questionsAsked: resd 1
     hasBeenCooked: resd 1
+    lastRandom: resd 1
