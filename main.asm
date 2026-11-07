@@ -117,8 +117,8 @@ section .text
                 cmp rbx, rax
                 jne bail
                 lea rcx, [rel roastGiveAnswer]
-                mov edx, [rel numb]
-                mov r8d, r12d
+                mov edx, r12d
+                mov r8d, [rel numb]
                 call printf
 
             bail:
