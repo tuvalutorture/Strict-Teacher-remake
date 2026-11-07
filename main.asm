@@ -160,6 +160,8 @@ section .text
                 mov ecx, [rel questionsAsked]
                 xor edx, edx
                 div ecx
+                cmp eax, 0 ; riiiiight, it can also be below 0 on accident. lovely
+                je .print_grade 
                 dec eax
             .print_grade:
                 lea rbx, [rel grades]
