@@ -217,6 +217,7 @@ section .text
             dec r14
             lea rbx, [rel bumpFuncs]
             call [rbx + r14 * 8]
+            mov [rel hasBeenCooked], 0
         .bail:
             add rsp, 40
             ret
@@ -261,9 +262,11 @@ section .data
     msg2: db "What is %d %s %d?: ", 10, 0
 
     endingMessage: 
+        db 27, "[35m"
         db "Are you really chickening out? After %d question(s)?", 10
         db "Fine. You got %d/%d correct.", 10
-        db "Come back tmr, or else... (you'll be reported truant if you don't :3)", 10, 0
+        db "Come back tmr, or else... (you'll be reported truant if you don't :3)", 10
+        db 27, "[0m", 0
 
     format: db "%d", 0
 
@@ -271,9 +274,9 @@ section .data
 
     streakForBump: dq 5
 
-    operation_plus: db "plus", 0
-    operation_minus: db "minus", 0
-    operation_times: db "times", 0
+    operation_plus: db 27, "[33m", "plus", 27, "[0m", 0
+    operation_minus: db 27, "[33m", "minus", 27, "[0m", 0
+    operation_times: db 27, "[33m", "times", 27, "[0m", 0
 
     operations:
         dq operation_plus
@@ -293,12 +296,12 @@ section .data
         dq multiplication
         dq multiplication
 
-    bump1: db "Hmpf. If that's so easy, let's crank it up a notch.", 0
-    bump2: db "Alright, smart guy. Try this on for size, eh?", 0
-    bump3: db "I didn't want to have to do this, but it's time to break out the big guns.", 0
-    bump4: db "You're more resilient than I thought, huh? Well, we'll see if that continues.", 0
-    bump5: db "Alright, fine. You've proved you're smarter than a second grader. But are you sure you can keep up?", 0
-    bump6: db "Fine. Fine. I concede. You've beaten me. Continue as long as you want, I don't have anything harder for you.", 0
+    bump1: db 27, "[36m", "Hmpf. If that's so easy, let's crank it up a notch.", 27, "[0m", 0
+    bump2: db 27, "[36m", "Alright, smart guy. Try this on for size, eh?", 27, "[0m", 0
+    bump3: db 27, "[36m", "I didn't want to have to do this, but it's time to break out the big guns.", 27, "[0m", 0
+    bump4: db 27, "[36m", "You're more resilient than I thought, huh? Well, we'll see if that continues.", 27, "[0m", 0
+    bump5: db 27, "[36m", "Alright, fine. You've proved you're smarter than a second grader. But are you sure you can keep up?", 27, "[0m", 0
+    bump6: db 27, "[36m", "Fine. Fine. I concede. You've beaten me. Continue as long as you want, I don't have anything harder for you.", 27, "[0m", 0
 
     bumps:
         dq bump1
@@ -318,16 +321,16 @@ section .data
         dq bumpToNoMoreWorldsToConquer
 
     ; chatgpt ahh feature but it's mine
-    roast0: db "My god, are you even TRYING?", 0
-    roast1: db "Please, for both of our sakes, just stop.", 0
-    roast2: db "Who taught you math!? Oh, wait, I did. Nevermind.", 0
-    roast3: db "Did your parents like, drop you on your head as a child?", 0
-    roast4: db "Can someone check if he's drunk? No, like, genuinely.", 0
-    roast5: db "Wrong-o, bucko! Try again. Or don't. Your choice, really.", 0
-    roast6: db "I do NOT get paid enough to try correcting this behaviour.", 0
-    roast7: db "I think I need hazard pay... reading this is genuinely reducing my thinking capacity.", 0
-    roast8: db "nahhhhh!!!", 0
-    roast9: db "*the teacher says nothing and takes a sip from a nondescript metal container*", 0
+    roast0: db 27, "[31m", "My god, are you even TRYING?", 27, "[0m", 0
+    roast1: db 27, "[31m", "Please, for both of our sakes, just stop.", 27, "[0m", 0
+    roast2: db 27, "[31m", "Who taught you math!? Oh, wait, I did. Nevermind.", 27, "[0m", 0
+    roast3: db 27, "[31m", "Did your parents like, drop you on your head as a child?", 27, "[0m", 0
+    roast4: db 27, "[31m", "Can someone check if he's drunk? No, like, genuinely.", 27, "[0m", 0
+    roast5: db 27, "[31m", "Wrong-o, bucko! Try again. Or don't. Your choice, really.", 27, "[0m", 0
+    roast6: db 27, "[31m", "I do NOT get paid enough to try correcting this behaviour.", 27, "[0m", 0
+    roast7: db 27, "[31m", "I think I need hazard pay... reading this is genuinely reducing my thinking capacity.", 27, "[0m", 0
+    roast8: db 27, "[31m", "nahhhhh!!!", 27, "[0m", 0
+    roast9: db 27, "[31m", "*the teacher says nothing and takes a sip from a nondescript metal container*", 27, "[0m", 0
 
     roasts:
         dq roast0
@@ -341,18 +344,18 @@ section .data
         dq roast8
         dq roast9
 
-    roastGiveAnswer: db "The answer, FYI, was %d. Not whatever %d is supposed to be. Just so you know, dingus.", 10, 0
+    roastGiveAnswer: db 27, "[33m", "The answer, FYI, was %d. Not whatever %d is supposed to be. Just so you know, dingus.", 27, "[0m", 10, 0
 
-    backhandedCompliment0: db "Really? I'd'a never guessed!", 0
-    backhandedCompliment1: db "That's nice, dear. Don't mess up further.", 0
-    backhandedCompliment2: db "Keep it up, and you might get a nice scholarship to the local community college.", 0
-    backhandedCompliment3: db "hmm, too easy.", 0
-    backhandedCompliment4: db "You know the idea of ", 34, "stumbling through life", 34, "? Somehow, you're doing it. Congrats.", 0
-    backhandedCompliment5: db "The local preschoolers marvel at your vast intellect, I'm sure.", 0
-    backhandedCompliment6: db "Oh, dear. Did the lone brain cell finally activate?", 0
-    backhandedCompliment7: db "Well, colour me surprised. Didn't think you'd get it, honestly.", 0
-    backhandedCompliment8: db "Genuinely, who are you trying to impress? Not me, that's for sure.", 0
-    backhandedCompliment9: db "You know, I'm almost proud of you. Almost.", 0
+    backhandedCompliment0: db 27, "[32m", "Really? I'd'a never guessed!", 27, "[0m", 0
+    backhandedCompliment1: db 27, "[32m", "That's nice, dear. Don't mess up further.", 27, "[0m", 0
+    backhandedCompliment2: db 27, "[32m", "Keep it up, and you might get a nice scholarship to the local community college.", 27, "[0m", 0
+    backhandedCompliment3: db 27, "[32m", "hmm, too easy.", 27, "[0m", 0
+    backhandedCompliment4: db 27, "[32m", "You know the idea of ", 34, "stumbling through life", 34, "? Somehow, you're doing it. Congrats.", 27, "[0m", 0
+    backhandedCompliment5: db 27, "[32m", "The local preschoolers marvel at your vast intellect, I'm sure.", 27, "[0m", 0
+    backhandedCompliment6: db 27, "[32m", "Oh, dear. Did the lone brain cell finally activate?", 27, "[0m", 0
+    backhandedCompliment7: db 27, "[32m", "Well, colour me surprised. Didn't think you'd get it, honestly.", 27, "[0m", 0
+    backhandedCompliment8: db 27, "[32m", "Genuinely, who are you trying to impress? Not me, that's for sure.", 27, "[0m", 0
+    backhandedCompliment9: db 27, "[32m", "You know, I'm almost proud of you. Almost.", 27, "[0m", 0
 
     backhandedCompliments:
         dq backhandedCompliment0
@@ -367,16 +370,20 @@ section .data
         dq backhandedCompliment9
 
     isGenuinelyDoingAwful: 
+        db 27, "[32m"
         db "Dear. God. You are GENUINELY awful at this.", 10
         db "You know what? You're going backwards.", 10
         db "That's right. Because you can't seem to get *A N Y T H I N G* right!", 10
         db "So maybe a slower change of pace will help you ACTUALLY accomplish something in your god-forsaken life. How's that?", 0
+        db 27, "[0m", 0
 
     isDoingSoBadlyTheyAreBeyondSalvation: 
+        db 27, "[32m"
         db "How. Just. How. You are doing math at the level of a PRESCHOOLER.", 10
         db "AND YET, BY GOD'S GOOD GRACES, YOU HAVE FAILED THAT TOO.", 10
         db "Just get out. Genuinely.", 10
-        db "Adios, bye, ciao, cya later, just not in MY classroom, for ritchie's sakes.", 0
+        db "Adios, bye, ciao, cya later, just not in MY classroom, for ritchie's sakes."
+        db 27, "[0m", 0
 
 section .bss
     numb: resd 1
