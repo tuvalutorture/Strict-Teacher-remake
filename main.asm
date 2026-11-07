@@ -11,12 +11,11 @@ extern printf, scanf, puts, rand, srand, time
 ; for time, in RAX
 
 section .text
-    ; So basically, I want to do an addition question.
-    ; If its wrong, it prints msg 3
-    ; If its right, it prints msg 4
-    ; At the start, it prints msg 1
-    ; At the end, it prints msg 5
-; Farhan babar the goat
+    ; Farhan babar the goat
+    ;          ^
+    ;          |
+    ;          |
+    ;         ???
     main:
         ; these five registers are free to use (non-volatile) so that's yum
         push r12 ; the first number
@@ -29,7 +28,7 @@ section .text
 
         xor eax, eax ; clears eax register to 0 
         lea rcx, [rel msg1] ; rcx is index register
-        call printf
+        call puts
 
         ; question section
         ; prepares randomisation of seed
@@ -90,28 +89,20 @@ section .text
                 lea rbx, [rel operationFuncs]
                 call [rbx + r14 * 8] ; math to get the current math function
                 cmp r12d, [rel numb] ; compare it to the input
-                clc ; clear carry just in case so we don't quit early
                 je is_correct
 
-                lea rbx, [rel roasts]
-                cmp r15, 0
-                je .is_doing_horrible
                 xor r15, r15
+                inc [rel hasBeenCooked]
+                call debump
+                lea rcx, [rel isDoingSoBadlyTheyAreBeyondSalvation]
+                cmp rcx, rbx
+                je bail
+                lea rbx, [rel roasts]
                 jmp done
-
-                .is_doing_horrible:
-                    inc [rel hasBeenCooked]
-                    call debump
-                    lea rcx, [rel isDoingSoBadlyTheyAreBeyondSalvation]
-                    cmp rcx, rbx
-                    je bail
-                    lea rbx, [rel roasts]
-                    jmp done
 
             is_correct:
                 mov [rel hasBeenCooked], 0 
                 inc [rel rightAnswers]
-                call printf
                 inc r15
                 call check_bump
                 clc
@@ -129,6 +120,7 @@ section .text
                 call puts
                 lea rax, [rel roasts]
                 cmp rbx, rax
+                clc
                 jne bail
                 lea rcx, [rel roastGiveAnswer]
                 mov edx, r12d
@@ -258,7 +250,7 @@ section .text
         ret
 
 section .data
-    msg1: db "Boy, you better get these questions right >:( (or press 0 to chicken out)", 10, 0
+    msg1: db "Boy, you better get these questions right >:( (or press 0 to chicken out)", 0
     msg2: db "What is %d %s %d?: ", 10, 0
 
     endingMessage: 
@@ -374,7 +366,7 @@ section .data
         db "Dear. God. You are GENUINELY awful at this.", 10
         db "You know what? You're going backwards.", 10
         db "That's right. Because you can't seem to get *A N Y T H I N G* right!", 10
-        db "So maybe a slower change of pace will help you ACTUALLY accomplish something in your god-forsaken life. How's that?", 0
+        db "So maybe a slower change of pace will help you ACTUALLY accomplish something in your god-forsaken life. How's that?"
         db 27, "[0m", 0
 
     isDoingSoBadlyTheyAreBeyondSalvation: 
