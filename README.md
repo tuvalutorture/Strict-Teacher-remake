@@ -8,8 +8,6 @@ the idea here is i took the original game, which featured basic addition right <
 and i added increasing difficulty (harder & harder math, from ez addition to nightmare multiplication)<br>
 plus i made the strict teacher just genuinely be mean asf I can't lie XD
 
-i did also lwk try adding a "check if your input is actually a number" but that died so hey pls don't spam random chars or it will die thx
-
 compilation steps are same as below BUT i personally run: <br>
 ```del main.exe && del main.obj && nasm -f win64 -g -F cv8 main.asm -o main.obj && gcc -g -m64 main.obj -o main.exe && main.exe```
 

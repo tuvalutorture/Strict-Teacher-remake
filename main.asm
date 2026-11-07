@@ -6,7 +6,7 @@
 bits 64
 
 global main
-extern printf, scanf, puts, rand, srand, time
+extern printf, scanf, puts, rand, srand, time, getchar
 ; for rand, number stored in EAX
 ; for time, in RAX
 
@@ -75,14 +75,21 @@ section .text
                 mov r9d, r13d ; 3rd argument (2nd num)
                 call printf ; prints the question out
 
-                ; scanning for question
-
-                lea rcx, [rel format] ; loads format string
-                lea rdx, [rel numb] ; sets input
-                call scanf
-
-                cmp [rel numb], 0
-                je taunt_and_bail
+                .get_answer:
+                    ; scanning for question
+                    lea rcx, [rel format] ; loads format string
+                    lea rdx, [rel numb] ; sets input
+                    call scanf
+                    cmp eax, 0
+                    jne .compare_to_quit
+                    lea rcx, [rel inputWasNotNumber]
+                    call puts
+                    call clearStdin
+                    jmp .get_answer
+                
+                .compare_to_quit:
+                    cmp [rel numb], 0
+                    je taunt_and_bail
 
                 inc [rel questionsAsked] ; question went through, so we inc
                 
@@ -268,6 +275,18 @@ section .text
         add rsp, 40
         ret
 
+    clearStdin:
+        sub rsp, 40
+        .get_next:
+            call getchar
+            cmp eax, 10
+            je .bail
+            cmp eax, -1
+            jne .get_next
+        .bail:
+            add rsp, 40
+            ret
+
 section .data
     msg1: db "Boy, you better get these questions right >:( (or press 0 to chicken out)", 0
     msg2: db "What is %d %s %d?: ", 10, 0
@@ -416,6 +435,8 @@ section .data
         dq diff5
         dq diff6
         dq diff7
+
+    inputWasNotNumber: db 27, "[31m", "Genuinely, what was that? That was not a number. Try again.", 27, "[0m", 0
 
 section .bss
     numb: resd 1
