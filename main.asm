@@ -10,6 +10,15 @@ extern printf, scanf, puts, rand, srand, time, getchar
 ; for rand, number stored in EAX
 ; for time, in RAX
 
+struc Difficulty ; ouh shi i remembered nasm has structs
+    .bumpfunc: resq 1
+    .bumpmsg: resq 1
+    .operation: resq 1
+    .operationname: resq 1
+    .operationfunc: resq 1
+    .name: resq 1
+endstruc
+
 section .text
     ; Farhan babar the goat
     ;          ^
@@ -19,10 +28,10 @@ section .text
     main:
         ; these five registers are free to use (non-volatile) so that's yum
         push r12 ; the first number
-        push r13 ; the second number
+        push r13 ; the second number / free agent for LEAs
         push r14 ; the difficulty
         push r15 ; the current running streak
-        push rbx ; the "oh shoot we need to LEA an addr for some math"
+        push rbx ; used to store the addr to the current difficulty struct
         
         sub rsp, 80
 
@@ -44,6 +53,11 @@ section .text
         xor r15, r15
 
         loop:
+            mov rax, Difficulty_size
+            mul r14
+            lea rbx, [rel difficulties] 
+            add rbx, rax ; get addr of current difficulty structure
+            
             cmp [rel didJustChangeDifficulty], 0
             je .get_nums
             call printDifficulty
@@ -70,8 +84,7 @@ section .text
                 ; printing question
                 lea rcx, [rel msg2]
                 mov edx, r12d ; 1st argument (1st num)
-                lea rbx, [rel operations]
-                mov r8, [rbx + r14 * 8] ; 2nd argument (the name of the operation we're committing)
+                mov r8, [rbx + Difficulty.operation] ; 2nd argument (the name of the operation we're committing)
                 mov r9d, r13d ; 3rd argument (2nd num)
                 call printf ; prints the question out
 
@@ -94,8 +107,7 @@ section .text
 
                 inc [rel questionsAsked] ; question went through, so we inc
                 
-                lea rbx, [rel operationFuncs]
-                call [rbx + r14 * 8] ; math to get the current math function
+                call [rbx + Difficulty.operationfunc] ; math to get the current math function
                 cmp r12d, [rel numb] ; compare it to the input
                 je is_correct
 
@@ -103,9 +115,9 @@ section .text
                 inc [rel hasBeenCooked]
                 call debump
                 lea rcx, [rel isDoingSoBadlyTheyAreBeyondSalvation]
-                cmp rcx, rbx
+                cmp rcx, r13 ; r13 is now unused and hence is safe to use
                 je dont_even_bother_printing_out
-                lea rbx, [rel roasts]
+                lea r13, [rel roasts]
                 jmp done
 
             is_correct:
@@ -113,7 +125,7 @@ section .text
                 inc [rel rightAnswers]
                 inc r15
                 call check_bump
-                lea rbx, [rel backhandedCompliments]
+                lea r13, [rel backhandedCompliments]
                 cmp eax, 0
                 jne loop
             
@@ -126,10 +138,10 @@ section .text
                     cmp edx, [rel lastRandom] ; it's uninitialised but it should be fine, worst case we get an extra loop iter.
                     mov [rel lastRandom], edx
                     je .pick_random ; prevents same thing from printing twice in a row 
-                mov rcx, [rbx + rdx * 8]
+                mov rcx, [r13 + rdx * 8]
                 call puts
                 lea rax, [rel roasts]
-                cmp rbx, rax
+                cmp r13, rax
                 jne bail
                 lea rcx, [rel roastGiveAnswer]
                 mov edx, r12d
@@ -151,9 +163,7 @@ section .text
             xor rax, rax
             mov eax, [rel rightAnswers]
             cmp eax, 0 ; nothing right at ALL
-            jne .get_grade
-            mov eax, 0 ; F
-            jmp .print_grade
+            je .print_grade ; F automatically
             .get_grade:
                 mov ecx, 5
                 mul ecx
@@ -212,12 +222,10 @@ section .text
             cmp r15, [rel streakForBump]
             jnae .return
             .performBump:
-                lea rbx, [rel bumps]
-                mov rcx, [rbx + r14 * 8]
+                mov rcx, [rbx + Difficulty.bumpmsg]
                 call puts
                 inc r14
-                lea rbx, [rel bumpFuncs]
-                call [rbx + r14 * 8]
+                call [rbx + Difficulty.bumpfunc]
                 xor r15, r15
                 mov eax, 1
                 mov [rel didJustChangeDifficulty], 1
@@ -232,7 +240,7 @@ section .text
         cmp r14, 0
         jne .decrement
         lea rcx, [rel isDoingSoBadlyTheyAreBeyondSalvation]
-        mov rbx, rcx
+        mov r13, rcx
         call puts
         mov [rel numb], 0
         jmp .bail
@@ -240,8 +248,7 @@ section .text
             lea rcx, [rel isGenuinelyDoingAwful]
             call puts
             dec r14
-            lea rbx, [rel bumpFuncs]
-            call [rbx + r14 * 8]
+            call [rbx + Difficulty.bumpfunc]
             mov [rel hasBeenCooked], 0
             mov [rel didJustChangeDifficulty], 1
         .bail:
@@ -287,14 +294,12 @@ section .text
         sub rsp, 40
         lea rcx, [rel divider]
         call puts
-        lea rbx, [rel diffs]
-        mov rcx, [rbx + r14 * 8]
+        mov rcx, [rbx + Difficulty.name]
         mov rdx, r14
         inc rdx
         call printf
         lea rcx, [rel diffFormat]
-        lea rbx, [rel operationNames]
-        mov rdx, [rbx + r14 * 8]
+        mov rdx, [rbx + Difficulty.operationname]
         call printf
         lea rcx, [rel divider]
         call puts
@@ -336,60 +341,17 @@ section .data
     operation_minus: db 27, "[33m", "minus", 27, "[0m", 0
     operation_times: db 27, "[33m", "times", 27, "[0m", 0
 
-    operations:
-        dq operation_plus
-        dq operation_plus
-        dq operation_minus
-        dq operation_minus
-        dq operation_times
-        dq operation_times
-        dq operation_times
-
     operation_addition: db "addition", 0
     operation_subtraction: db "subtraction", 0
     operation_multiplication: db "multiplication", 0
 
-    operationNames:
-        dq operation_addition
-        dq operation_addition
-        dq operation_subtraction
-        dq operation_subtraction
-        dq operation_multiplication
-        dq operation_multiplication
-        dq operation_multiplication
-
-    operationFuncs:
-        dq addition
-        dq addition
-        dq subtraction
-        dq subtraction
-        dq multiplication
-        dq multiplication
-        dq multiplication
-
+    bump0: db 27, "[36m", "Let's start out nice and slow, shall we?", 27, "[0m", 0
     bump1: db 27, "[36m", "Hmpf. If that's so easy, let's crank it up a notch.", 27, "[0m", 0
     bump2: db 27, "[36m", "Alright, smart guy. Try this on for size, eh?", 27, "[0m", 0
     bump3: db 27, "[36m", "I didn't want to have to do this, but it's time to break out the big guns.", 27, "[0m", 0
     bump4: db 27, "[36m", "You're more resilient than I thought, huh? Well, we'll see if that continues.", 27, "[0m", 0
     bump5: db 27, "[36m", "Alright, fine. You've proved you're smarter than a second grader. But are you sure you can keep up?", 27, "[0m", 0
     bump6: db 27, "[36m", "Fine. Fine. I concede. You've beaten me. Continue as long as you want, I don't have anything harder for you.", 27, "[0m", 0
-
-    bumps:
-        dq bump1
-        dq bump2
-        dq bump3
-        dq bump4
-        dq bump5
-        dq bump6
-    
-    bumpFuncs:
-        dq bumpToAddition
-        dq bumpToHardAddition
-        dq bumpToSubtraction
-        dq bumpToHardSubtraction
-        dq bumpToMultiplication
-        dq bumpToHardMultiplication
-        dq bumpToNoMoreWorldsToConquer
 
     ; chatgpt ahh feature but it's mine
     roast0: db 27, "[31m", "My god, are you even TRYING?", 27, "[0m", 0
@@ -468,22 +430,13 @@ section .data
 
     diffFormat: db " (", 27, "[33m", "%s", 27, "[0m", ")", 10, 0
 
-    diffs:
-        dq diff1
-        dq diff2
-        dq diff3
-        dq diff4
-        dq diff5
-        dq diff6
-        dq diff7
-
     inputWasNotNumber: db 27, "[31m", "Genuinely, what was that? That was not a number. Try again.", 27, "[0m", 0
 
-    gradeA: db 27, "[32m", "A", 27, "[0m", 0
-    gradeB: db 27, "[36m", "B", 27, "[0m", 0
-    gradeC: db 27, "[33m", "C", 27, "[0m", 0
-    gradeD: db 27, "[35m", "D", 27, "[0m", 0
-    gradeF: db 27, "[31m", "F", 27, "[0m", 0
+    gradeA: db 27, "[32m", "A. Against all odds. Shocking.", 27, "[0m", 0
+    gradeB: db 27, "[36m", "B. Am I supposed to be impressed?", 27, "[0m", 0
+    gradeC: db 27, "[33m", "C. Average. Wow.", 27, "[0m", 0
+    gradeD: db 27, "[35m", "D. Try harder next time.", 27, "[0m", 0
+    gradeF: db 27, "[31m", "F. Not surprised.", 27, "[0m", 0
 
     gradeString: db "Your final ", 27, "[33m", "grade", 27, "[0m", ": %s", 10, 0
 
@@ -493,7 +446,64 @@ section .data
         dq gradeC
         dq gradeB
         dq gradeA
-        
+    
+    difficulties:
+        istruc Difficulty
+            at Difficulty.bumpfunc, dq bumpToAddition
+            at Difficulty.bumpmsg, dq bump0
+            at Difficulty.operation, dq operation_plus
+            at Difficulty.operationname, dq operation_addition
+            at Difficulty.operationfunc, dq addition
+            at Difficulty.name, dq diff1
+        iend
+        istruc Difficulty
+            at Difficulty.bumpfunc, dq bumpToHardAddition
+            at Difficulty.bumpmsg, dq bump1
+            at Difficulty.operation, dq operation_plus
+            at Difficulty.operationname, dq operation_addition
+            at Difficulty.operationfunc, dq addition
+            at Difficulty.name, dq diff2
+        iend
+        istruc Difficulty
+            at Difficulty.bumpfunc, dq bumpToSubtraction
+            at Difficulty.bumpmsg, dq bump2
+            at Difficulty.operation, dq operation_minus
+            at Difficulty.operationname, dq operation_subtraction
+            at Difficulty.operationfunc, dq subtraction
+            at Difficulty.name, dq diff3
+        iend
+        istruc Difficulty
+            at Difficulty.bumpfunc, dq bumpToHardSubtraction
+            at Difficulty.bumpmsg, dq bump3
+            at Difficulty.operation, dq operation_minus
+            at Difficulty.operationname, dq operation_subtraction
+            at Difficulty.operationfunc, dq subtraction
+            at Difficulty.name, dq diff4
+        iend
+        istruc Difficulty
+            at Difficulty.bumpfunc, dq bumpToMultiplication
+            at Difficulty.bumpmsg, dq bump4
+            at Difficulty.operation, dq operation_times
+            at Difficulty.operationname, dq operation_multiplication
+            at Difficulty.operationfunc, dq multiplication
+            at Difficulty.name, dq diff5
+        iend
+        istruc Difficulty
+            at Difficulty.bumpfunc, dq bumpToHardMultiplication
+            at Difficulty.bumpmsg, dq bump5
+            at Difficulty.operation, dq operation_times
+            at Difficulty.operationname, dq operation_multiplication
+            at Difficulty.operationfunc, dq multiplication
+            at Difficulty.name, dq diff6
+        iend
+        istruc Difficulty
+            at Difficulty.bumpfunc, dq bumpToNoMoreWorldsToConquer
+            at Difficulty.bumpmsg, dq bump6
+            at Difficulty.operation, dq operation_times
+            at Difficulty.operationname, dq operation_multiplication
+            at Difficulty.operationfunc, dq multiplication
+            at Difficulty.name, dq diff7
+        iend
 
 section .bss
     numb: resd 1
