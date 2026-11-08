@@ -222,9 +222,10 @@ section .text
             cmp r15, [rel streakForBump]
             jnae .return
             .performBump:
+                inc r14
+                add rbx, Difficulty_size
                 mov rcx, [rbx + Difficulty.bumpmsg]
                 call puts
-                inc r14
                 call [rbx + Difficulty.bumpfunc]
                 xor r15, r15
                 mov eax, 1
@@ -248,6 +249,7 @@ section .text
             lea rcx, [rel isGenuinelyDoingAwful]
             call puts
             dec r14
+            sub rbx, Difficulty_size
             call [rbx + Difficulty.bumpfunc]
             mov [rel hasBeenCooked], 0
             mov [rel didJustChangeDifficulty], 1
